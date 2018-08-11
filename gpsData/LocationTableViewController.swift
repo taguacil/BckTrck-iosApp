@@ -1,0 +1,277 @@
+//
+//  LocationTableViewController.swift
+//  gpsData
+//
+//  Created by Taimir Aguacil on 10.08.18.
+//  Copyright © 2018 Taimir Aguacil. All rights reserved.
+//
+
+import UIKit
+import CoreLocation
+import os.log
+
+class LocationTableViewController: UITableViewController, CLLocationManagerDelegate {
+
+    // MARK: Properties
+    @IBOutlet weak var navigationBar: UINavigationItem!
+    let locationManager = CLLocationManager()
+    var runningCode = false
+    var iteration = 0
+    var locationVector = [CLLocation] ()
+    var logString = String()
+    var playBtn = UIBarButtonItem()
+    var stopBtn = UIBarButtonItem()
+    
+    //MARK: Table controller functions
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        // UIBarButton
+        self.playBtn = UIBarButtonItem(barButtonSystemItem: .play , target: self, action: #selector(flipBtnAction(sender:)))
+        self.stopBtn = UIBarButtonItem(barButtonSystemItem: .stop , target: self, action: #selector(flipBtnAction(sender:)))
+        self.navigationItem.rightBarButtonItem = playBtn
+        
+        // Handle the location field's user input through delegate callbacks
+        locationManager.delegate = self
+        enableBasicLocationServices()
+    }
+
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        // Dispose of any resources that can be recreated.
+    }
+
+    // MARK: - Table view data source
+    override func numberOfSections(in tableView: UITableView) -> Int {
+        return 1
+    }
+
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return locationVector.count
+    }
+
+    
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        // Table view cells are reused and should be dequeued using a cell identifier.
+        let cellIdentifier = "LocationTableViewCell"
+        
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: cellIdentifier, for: indexPath) as? LocationTableViewCell else {
+            fatalError("The dequeued cell is not an instance of LocationTableViewCell.")
+        }
+        
+        // Configure the cell...
+        cell.acqVal.text = "\(indexPath.row), \(locationVector[indexPath.row].timestamp)"
+        
+        return cell
+    }
+    
+    // Override to support conditional editing of the table view.
+    override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+        // Return false if you do not want the specified item to be editable.
+        return true
+    }
+
+    // Override to support editing the table view.
+    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
+        if editingStyle == .delete {
+            // Delete the row from the data source
+            locationVector.remove(at: indexPath.row)
+            tableView.deleteRows(at: [indexPath], with: .fade)
+        } else if editingStyle == .insert {
+            // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
+        }    
+    }
+
+    /*
+    // Override to support rearranging the table view.
+    override func tableView(_ tableView: UITableView, moveRowAt fromIndexPath: IndexPath, to: IndexPath) {
+
+    }
+    */
+
+    /*
+    // Override to support conditional rearranging of the table view.
+    override func tableView(_ tableView: UITableView, canMoveRowAt indexPath: IndexPath) -> Bool {
+        // Return false if you do not want the item to be re-orderable.
+        return true
+    }
+    */
+
+    // MARK: - Navigation
+    // In a storyboard-based application, you will often want to do a little preparation before navigation
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        super.prepare(for: segue, sender: sender)
+        switch(segue.identifier ?? "") {
+        case "ShowDetail":
+            guard let locationDetailViewController = segue.destination as? ViewController else {
+                fatalError("Unexpected destination: \(segue.destination)")
+            }
+            
+            guard let selectedLocationDataCell = sender as? LocationTableViewCell else {
+                fatalError("Unexpected sender: \(String(describing: sender))")
+            }
+            
+            guard let indexPath = tableView.indexPath(for: selectedLocationDataCell) else {
+                fatalError("The selected cell is not being displayed by the table")
+            }
+            
+            let selectedLocation = locationVector[indexPath.row]
+            locationDetailViewController.locationData = selectedLocation
+            
+        default:
+            fatalError("Unexpected Segue Identifier; \(String(describing: segue.identifier))")
+        }
+        
+    }
+
+    //MARK: CLLocationManagerDelegate
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        let userLocation:CLLocation = locations[0] as CLLocation
+        
+        iteration += 1
+        
+        logString = "DEBUG: acquisition \(iteration)"
+        print(logString)
+        
+        print("user latitude = \(userLocation.coordinate.latitude)")
+        print("user longitude = \(userLocation.coordinate.longitude)")
+        // Add a new location object.
+        let newIndexPath = IndexPath(row: locationVector.count, section: 0)
+        
+        locationVector.append(userLocation)
+        tableView.insertRows(at: [newIndexPath], with: .automatic)
+    }
+    
+    func locationManager(_ manager: CLLocationManager,
+                         didChangeAuthorization status: CLAuthorizationStatus) {
+        switch status {
+        case .restricted, .denied:
+            os_log("Location services not enabled", log: OSLog.default, type: .debug)
+            break
+
+        case .notDetermined, .authorizedWhenInUse, .authorizedAlways:
+            break
+        }
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error)
+    {
+        print("Error \(error)")
+    }
+    
+    //MARK: Actions
+    @objc func flipBtnAction(sender: UIBarButtonItem)
+    {
+        if runningCode {
+            runningCode = false
+            self.navigationItem.rightBarButtonItem = playBtn
+            locationManager.stopUpdatingLocation()
+        } else {
+            runningCode = true
+            self.navigationItem.rightBarButtonItem = stopBtn
+            startLocationAcquisition()
+        }
+        
+    }
+    @IBAction func clearButton(_ sender: UIBarButtonItem) {
+        // Stop acquisition
+        if runningCode {
+            runningCode = false
+            self.navigationItem.rightBarButtonItem = playBtn
+            locationManager.stopUpdatingLocation()
+        }
+        locationVector.removeAll()
+        tableView.reloadData()
+    }
+    
+    @IBAction func shareButton(_ sender: UIBarButtonItem) {
+        // Stop acquisition
+        if runningCode {
+            runningCode = false
+            self.navigationItem.rightBarButtonItem = playBtn
+            locationManager.stopUpdatingLocation()
+        }
+    
+        let fileName = "gpsLocation.csv"
+        let path = NSURL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(fileName)
+        
+        var csvText = "Date,Latitude,Longitude,Altitude,Speed,Course,Vertical accuracy, horizontal accuracy\n"
+        
+        let count = locationVector.count
+        
+        if count > 0 {
+            
+            for item in locationVector {
+                
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateStyle = DateFormatter.Style.short
+                dateFormatter.timeStyle = .medium
+                let convertedDate = dateFormatter.string(from: item.timestamp)
+                
+                
+                let newLine = "\(convertedDate),\(item.coordinate.latitude),\(item.coordinate.longitude),\(item.altitude),\(item.speed),\(item.course),\(item.verticalAccuracy),\(item.horizontalAccuracy)\n"
+                
+                csvText.append(contentsOf: newLine)
+            }
+            
+            do {
+                try csvText.write(to: path!, atomically: true, encoding: String.Encoding.utf8)
+                
+                let vc = UIActivityViewController(activityItems: [path!], applicationActivities: [])
+                vc.excludedActivityTypes = [
+                    UIActivityType.assignToContact,
+                    UIActivityType.saveToCameraRoll,
+                    UIActivityType.postToFlickr,
+                    UIActivityType.postToVimeo,
+                    UIActivityType.postToTencentWeibo,
+                    UIActivityType.postToTwitter,
+                    UIActivityType.postToFacebook,
+                    UIActivityType.openInIBooks
+                ]
+                present(vc, animated: true, completion: nil)
+                
+            } catch {
+                os_log("Failed to create file", log: OSLog.default, type: .error)
+                print("\(error)")
+            }
+            
+        } else {
+            os_log("There is no data to export", log: OSLog.default, type: .debug)
+        }
+    }
+    
+    //MARK: Private Properties
+    private func enableBasicLocationServices() {
+        
+        switch CLLocationManager.authorizationStatus() {
+        case .notDetermined:
+            // Request when-in-use authorization initially
+            locationManager.requestWhenInUseAuthorization()
+            break
+            
+        case .restricted, .denied:
+            // Disable location features
+            os_log("Location services not enabled", log: OSLog.default, type: .debug)
+            break
+            
+        case .authorizedWhenInUse, .authorizedAlways:
+            // Enable location features
+            os_log("Location services enabled", log: OSLog.default, type: .debug)
+            break
+        }
+    }
+    
+    private func startLocationAcquisition() {
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.distanceFilter = kCLDistanceFilterNone
+        
+        if CLLocationManager.locationServicesEnabled() {
+            //locationManager.requestLocation()
+            
+            locationManager.startUpdatingLocation()
+            //locationManager.startUpdatingHeading()
+        } else {
+            // Update your app’s UI to show that the location is unavailable.
+        }
+    }
+}
