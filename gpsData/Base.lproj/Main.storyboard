@@ -59,6 +59,12 @@
                                 <action selector="shareButton:" destination="lVk-b5-bPX" id="aOq-Kg-jQc"/>
                             </connections>
                         </barButtonItem>
+                        <barButtonItem width="300" style="plain" systemItem="fixedSpace" id="q81-1m-dFs"/>
+                        <barButtonItem systemItem="search" id="wtg-OE-FOe">
+                            <connections>
+                                <segue destination="0VA-zY-95g" kind="show" identifier="ShowRoute" id="eDt-xl-YAl"/>
+                            </connections>
+                        </barButtonItem>
                     </toolbarItems>
                     <navigationItem key="navigationItem" title="GPS data" id="RRg-sS-Azt">
                         <barButtonItem key="leftBarButtonItem" systemItem="trash" id="8c6-o9-83T">
@@ -280,7 +286,36 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="sao-Dx-XtW" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="3572" y="-143.3497536945813"/>
+            <point key="canvasLocation" x="3540" y="234"/>
+        </scene>
+        <!--RouteViewController-->
+        <scene sceneID="Jeq-AK-Dqn">
+            <objects>
+                <viewController title="RouteViewController" hidesBottomBarWhenPushed="YES" id="0VA-zY-95g" customClass="RouteViewController" customModule="gpsData" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="aaS-wx-KJ0">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="812"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <mapView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" mapType="standard" translatesAutoresizingMaskIntoConstraints="NO" id="fuK-1N-5Li">
+                                <rect key="frame" x="0.0" y="88" width="375" height="724"/>
+                            </mapView>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <constraints>
+                            <constraint firstItem="fuK-1N-5Li" firstAttribute="top" secondItem="TA0-90-6tp" secondAttribute="top" id="1do-KU-VO7"/>
+                            <constraint firstItem="fuK-1N-5Li" firstAttribute="trailing" secondItem="TA0-90-6tp" secondAttribute="trailing" id="U4E-1a-4fD"/>
+                            <constraint firstAttribute="bottom" secondItem="fuK-1N-5Li" secondAttribute="bottom" id="jEi-uw-WT9"/>
+                            <constraint firstItem="fuK-1N-5Li" firstAttribute="leading" secondItem="TA0-90-6tp" secondAttribute="leading" id="lWh-Xh-4q1"/>
+                        </constraints>
+                        <viewLayoutGuide key="safeArea" id="TA0-90-6tp"/>
+                    </view>
+                    <connections>
+                        <outlet property="mapView" destination="fuK-1N-5Li" id="E5d-Np-OVK"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="vWc-SV-LH2" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="3540" y="-453.69458128078821"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="dX7-up-y8M">

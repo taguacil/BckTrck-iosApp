@@ -1,5 +1,5 @@
 //
-//  DetailsViewController.swift
+//  DetailstViewController.swift
 //  gpsData
 //
 //  Created by Taimir Aguacil on 10.08.18.
@@ -39,7 +39,7 @@ class DetailsViewController: UIViewController {
         }
         
     }
-
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
