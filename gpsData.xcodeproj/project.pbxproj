@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0FE70CF6211E05460087CD70 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FE70CF5211E05460087CD70 /* AppDelegate.swift */; };
-		0FE70CF8211E05460087CD70 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FE70CF7211E05460087CD70 /* ViewController.swift */; };
+		0FE70CF8211E05460087CD70 /* DetailsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FE70CF7211E05460087CD70 /* DetailsViewController.swift */; };
 		0FE70CFB211E05460087CD70 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0FE70CF9211E05460087CD70 /* Main.storyboard */; };
 		0FE70CFE211E05460087CD70 /* gpsData.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 0FE70CFC211E05460087CD70 /* gpsData.xcdatamodeld */; };
 		0FE70D00211E05480087CD70 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0FE70CFF211E05480087CD70 /* Assets.xcassets */; };
@@ -39,7 +39,7 @@
 /* Begin PBXFileReference section */
 		0FE70CF2211E05460087CD70 /* gpsData.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = gpsData.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0FE70CF5211E05460087CD70 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		0FE70CF7211E05460087CD70 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		0FE70CF7211E05460087CD70 /* DetailsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailsViewController.swift; sourceTree = "<group>"; };
 		0FE70CFA211E05460087CD70 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		0FE70CFD211E05460087CD70 /* gpsData.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = gpsData.xcdatamodel; sourceTree = "<group>"; };
 		0FE70CFF211E05480087CD70 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -104,7 +104,7 @@
 			isa = PBXGroup;
 			children = (
 				0FE70CF5211E05460087CD70 /* AppDelegate.swift */,
-				0FE70CF7211E05460087CD70 /* ViewController.swift */,
+				0FE70CF7211E05460087CD70 /* DetailsViewController.swift */,
 				0FE70D28211E27ED0087CD70 /* LocationTableViewController.swift */,
 				0FE70D2A211E3F850087CD70 /* LocationTableViewCell.swift */,
 				0FE70CF9211E05460087CD70 /* Main.storyboard */,
@@ -267,7 +267,7 @@
 			files = (
 				0FE70D29211E27ED0087CD70 /* LocationTableViewController.swift in Sources */,
 				0FE70D2B211E3F850087CD70 /* LocationTableViewCell.swift in Sources */,
-				0FE70CF8211E05460087CD70 /* ViewController.swift in Sources */,
+				0FE70CF8211E05460087CD70 /* DetailsViewController.swift in Sources */,
 				0FE70CF6211E05460087CD70 /* AppDelegate.swift in Sources */,
 				0FE70CFE211E05460087CD70 /* gpsData.xcdatamodeld in Sources */,
 			);

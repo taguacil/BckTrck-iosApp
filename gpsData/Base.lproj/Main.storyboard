@@ -76,7 +76,7 @@
         <!--Details-->
         <scene sceneID="hs9-2l-3Y1">
             <objects>
-                <viewController title="Details" hidesBottomBarWhenPushed="YES" id="TZ8-Nw-guI" customClass="ViewController" customModule="gpsData" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController title="Details" hidesBottomBarWhenPushed="YES" id="TZ8-Nw-guI" customClass="DetailsViewController" customModule="gpsData" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="hTp-LZ-RC5">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="812"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>

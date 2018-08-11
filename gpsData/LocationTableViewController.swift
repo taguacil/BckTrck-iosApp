@@ -103,7 +103,7 @@ class LocationTableViewController: UITableViewController, CLLocationManagerDeleg
         super.prepare(for: segue, sender: sender)
         switch(segue.identifier ?? "") {
         case "ShowDetail":
-            guard let locationDetailViewController = segue.destination as? ViewController else {
+            guard let locationDetailViewController = segue.destination as? DetailsViewController else {
                 fatalError("Unexpected destination: \(segue.destination)")
             }
             

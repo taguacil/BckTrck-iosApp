@@ -1,5 +1,5 @@
 //
-//  ViewController.swift
+//  DetailsViewController.swift
 //  gpsData
 //
 //  Created by Taimir Aguacil on 10.08.18.
@@ -10,7 +10,7 @@ import UIKit
 import CoreLocation
 import os.log
 
-class ViewController: UIViewController {
+class DetailsViewController: UIViewController {
     
     //MARK: Properties
     @IBOutlet weak var latLabel: UILabel!
