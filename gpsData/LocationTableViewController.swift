@@ -10,6 +10,11 @@ import UIKit
 import CoreLocation
 import os.log
 
+//MARK: Protocol
+protocol LocationTableViewDelegate : class {
+    func updateLocation(_ locationTableViewController : LocationTableViewController, didGetNewLocation newLocation: CLLocation)
+}
+
 class LocationTableViewController: UITableViewController, CLLocationManagerDelegate {
     
     // MARK: Properties
@@ -21,6 +26,8 @@ class LocationTableViewController: UITableViewController, CLLocationManagerDeleg
     var logString = String()
     var playBtn = UIBarButtonItem()
     var stopBtn = UIBarButtonItem()
+    
+    weak var delegate: LocationTableViewDelegate?
     
     //MARK: Table controller functions
     override func viewDidLoad() {
@@ -123,6 +130,7 @@ class LocationTableViewController: UITableViewController, CLLocationManagerDeleg
                 fatalError("Unexpected destination: \(segue.destination)")
             }
             routeViewController.locationVector = locationVector
+            self.delegate = routeViewController
             
         default:
             fatalError("Unexpected Segue Identifier; \(String(describing: segue.identifier))")
@@ -141,10 +149,12 @@ class LocationTableViewController: UITableViewController, CLLocationManagerDeleg
         
         print("user latitude = \(userLocation.coordinate.latitude)")
         print("user longitude = \(userLocation.coordinate.longitude)")
+        print(" \(userLocation.timestamp)")
         // Add a new location object.
         let newIndexPath = IndexPath(row: locationVector.count, section: 0)
         
         locationVector.append(userLocation)
+        delegate?.updateLocation(self, didGetNewLocation: userLocation)
         tableView.insertRows(at: [newIndexPath], with: .automatic)
     }
     

@@ -10,25 +10,25 @@ import UIKit
 import MapKit
 import os.log
 
-class RouteViewController: UIViewController, MKMapViewDelegate {
-    
+class RouteViewController: UIViewController, MKMapViewDelegate, LocationTableViewDelegate {
+
     //MARK: Properties
     @IBOutlet weak var mapView: MKMapView!
     var locationVector : [CLLocation]?
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         
         mapView.delegate = self
-        
-        if let locationVector = locationVector {
+        if let locationVector = locationVector
+        {
+            //locationTableViewController.delegate = self
             if locationVector.isEmpty {
-                os_log("No data to display", log: OSLog.default, type: .debug)
+                os_log("No data to display, removing pins", log: OSLog.default, type: .debug)
             } else {
                 zoomToRegion(initialLocation: locationVector.first!)
-                let annotations = getMapAnnotations()
+                let annotations = getMapAnnotations(locationVector: locationVector)
                 // Add mappoints to Map
-                mapView.addAnnotations(annotations)
+                mapView.showAnnotations(annotations, animated: true)
                 // Connect all the mappoints using Poly line.
                 var points = [CLLocationCoordinate2D]()
                 for annotation in annotations {
@@ -45,16 +45,32 @@ class RouteViewController: UIViewController, MKMapViewDelegate {
         // Dispose of any resources that can be recreated.
     }
     
-    
     /*
      // MARK: - Navigation
-     
      // In a storyboard-based application, you will often want to do a little preparation before navigation
      override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
      // Get the new view controller using segue.destinationViewController.
      // Pass the selected object to the new view controller.
      }
-     */
+    */
+    
+    //MARK: LocationTabViewDelegate
+    func updateLocation(_ locationTableViewController : LocationTableViewController, didGetNewLocation newLocation: CLLocation) {
+        var annotations = [MKAnnotation]()
+        let annotation = MKPointAnnotation()
+        locationVector?.append(newLocation)
+        annotation.coordinate = newLocation.coordinate
+        annotations.append(annotation)
+        mapView.showAnnotations(annotations, animated: true)
+        
+        var points = [CLLocationCoordinate2D]()
+        let beforeLastElem =  locationVector![(locationVector?.count)!-2]
+        print("DEBUG \(beforeLastElem.timestamp)")
+        points.append(beforeLastElem.coordinate)
+            points.append(newLocation.coordinate)
+        let polyline = MKPolyline(coordinates: points, count: points.count)
+        mapView.add(polyline)
+    }
     
     //MARK:- MapViewDelegate methods
     func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer{
@@ -63,7 +79,7 @@ class RouteViewController: UIViewController, MKMapViewDelegate {
             polylineRenderer.lineWidth = 4.0
             return polylineRenderer
     }
-    
+
     //MARK:- Zoom to region
     func zoomToRegion(initialLocation : CLLocation ) {
         let region = MKCoordinateRegion(center: initialLocation.coordinate, span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01))
@@ -71,19 +87,19 @@ class RouteViewController: UIViewController, MKMapViewDelegate {
     }
     
     //MARK:- Annotations
-    func getMapAnnotations() -> [MKAnnotation] {
+    func getMapAnnotations(locationVector : [CLLocation]) -> [MKAnnotation] {
         var annotations = [MKAnnotation]()
         
         //iterate and create annotations
-        if let items = locationVector {
-            for item in items {
+            for item in locationVector {
                 let myAnnotation : MKPointAnnotation = MKPointAnnotation()
                 myAnnotation.coordinate = item.coordinate
                 myAnnotation.title = "\(item.timestamp)"
                 annotations.append(myAnnotation)
-            }
         }
         return annotations
     }
+    
+    //MARK: Private Properties
     
 }
