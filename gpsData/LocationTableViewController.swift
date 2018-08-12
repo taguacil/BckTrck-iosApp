@@ -260,9 +260,15 @@ class LocationTableViewController: UITableViewController, CLLocationManagerDeleg
             os_log("Location services not enabled", log: OSLog.default, type: .debug)
             break
             
-        case .authorizedWhenInUse, .authorizedAlways:
+        case .authorizedWhenInUse:
             // Enable location features
-            os_log("Location services enabled", log: OSLog.default, type: .debug)
+            os_log("Location services only enabled when in use", log: OSLog.default, type: .debug)
+            locationManager.requestAlwaysAuthorization()
+            break
+            
+        case .authorizedAlways:
+            // Enable location features
+            os_log("Location services always enabled", log: OSLog.default, type: .debug)
             break
         }
     }
@@ -270,6 +276,8 @@ class LocationTableViewController: UITableViewController, CLLocationManagerDeleg
     private func startLocationAcquisition() {
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.distanceFilter = kCLDistanceFilterNone
+        locationManager.allowsBackgroundLocationUpdates = true
+        locationManager.pausesLocationUpdatesAutomatically = false
         
         if CLLocationManager.locationServicesEnabled() {
             //locationManager.requestLocation()
