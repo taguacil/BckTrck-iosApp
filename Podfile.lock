@@ -1,0 +1,20 @@
+PODS:
+  - MachineLearningKit (0.1.8):
+    - Upsurge
+  - Upsurge (0.10.2)
+
+DEPENDENCIES:
+  - MachineLearningKit
+
+SPEC REPOS:
+  https://github.com/cocoapods/specs.git:
+    - MachineLearningKit
+    - Upsurge
+
+SPEC CHECKSUMS:
+  MachineLearningKit: a2b08488977e79eb075c771c7154ef044f95d5f8
+  Upsurge: 5866beadc3da27f91c5df4ac795deb3f3238d678
+
+PODFILE CHECKSUM: 419919dfb95fc957fa00eb87c6a5e79046251ae6
+
+COCOAPODS: 1.5.3
