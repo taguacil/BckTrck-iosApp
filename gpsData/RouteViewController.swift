@@ -61,11 +61,10 @@ class RouteViewController: UIViewController, MKMapViewDelegate, LocationTableVie
         locationVector?.append(newLocation)
         annotation.coordinate = newLocation.coordinate
         annotations.append(annotation)
-        mapView.showAnnotations(annotations, animated: true)
+        mapView.addAnnotations(annotations)
         
         var points = [CLLocationCoordinate2D]()
         let beforeLastElem =  locationVector![(locationVector?.count)!-2]
-        print("DEBUG \(beforeLastElem.timestamp)")
         points.append(beforeLastElem.coordinate)
             points.append(newLocation.coordinate)
         let polyline = MKPolyline(coordinates: points, count: points.count)

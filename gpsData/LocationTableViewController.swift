@@ -208,7 +208,7 @@ class LocationTableViewController: UITableViewController, CLLocationManagerDeleg
             locationManager.stopUpdatingLocation()
         }
         
-        let fileName = "gpsLocation.csv"
+        let fileName = "gpsLocation_\(String(describing: locationVector.first?.timestamp)).csv "
         let path = NSURL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(fileName)
         
         var csvText = "Date,Latitude,Longitude,Altitude,Speed,Course,Vertical accuracy, horizontal accuracy\n"
