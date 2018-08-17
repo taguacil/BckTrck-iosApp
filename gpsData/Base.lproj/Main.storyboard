@@ -59,7 +59,14 @@
                                 <action selector="shareButton:" destination="lVk-b5-bPX" id="aOq-Kg-jQc"/>
                             </connections>
                         </barButtonItem>
-                        <barButtonItem width="300" style="plain" systemItem="fixedSpace" id="q81-1m-dFs"/>
+                        <barButtonItem width="101" style="plain" systemItem="fixedSpace" id="blb-Ee-mbv"/>
+                        <barButtonItem title="Compute" id="Dq5-2s-3eH"/>
+                        <barButtonItem width="300" style="plain" systemItem="fixedSpace" id="q81-1m-dFs">
+                            <connections>
+                                <action selector="computeButton:" destination="lVk-b5-bPX" id="fgR-Cj-lwh"/>
+                                <segue destination="0VA-zY-95g" kind="showDetail" identifier="ShowComputed" id="8Ms-2r-uWA"/>
+                            </connections>
+                        </barButtonItem>
                         <barButtonItem systemItem="search" id="wtg-OE-FOe">
                             <connections>
                                 <segue destination="0VA-zY-95g" kind="show" identifier="ShowRoute" id="eDt-xl-YAl"/>
@@ -297,7 +304,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <mapView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" mapType="standard" translatesAutoresizingMaskIntoConstraints="NO" id="fuK-1N-5Li">
-                                <rect key="frame" x="0.0" y="88" width="375" height="724"/>
+                                <rect key="frame" x="0.0" y="44" width="375" height="768"/>
                             </mapView>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
@@ -315,7 +322,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="vWc-SV-LH2" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="3540" y="-453.69458128078821"/>
+            <point key="canvasLocation" x="3879" y="-460"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="dX7-up-y8M">
@@ -340,4 +347,7 @@
             <point key="canvasLocation" x="1760.8" y="-143.3497536945813"/>
         </scene>
     </scenes>
+    <inferredMetricsTieBreakers>
+        <segue reference="8Ms-2r-uWA"/>
+    </inferredMetricsTieBreakers>
 </document>

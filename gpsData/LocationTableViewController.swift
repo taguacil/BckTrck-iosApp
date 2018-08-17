@@ -132,6 +132,13 @@ class LocationTableViewController: UITableViewController, CLLocationManagerDeleg
             routeViewController.locationVector = locationVector
             self.delegate = routeViewController
             
+        case "ShowComputed":
+            guard let routeViewController = segue.destination as? RouteViewController else {
+                fatalError("Unexpected destination: \(segue.destination)")
+            }
+            routeViewController.locationVector = locationVector
+            
+            
         default:
             fatalError("Unexpected Segue Identifier; \(String(describing: segue.identifier))")
         }
@@ -254,6 +261,18 @@ class LocationTableViewController: UITableViewController, CLLocationManagerDeleg
         } else {
             os_log("There is no data to export", log: OSLog.default, type: .debug)
         }
+    }
+    
+    @IBAction func computeButton(_ sender: UIBarButtonItem) {
+        // Stop acquisition
+        if runningCode {
+            runningCode = false
+            self.navigationItem.rightBarButtonItem = playBtn
+            locationManager.stopUpdatingLocation()
+        }
+        
+        
+        
     }
     
     //MARK: Private Properties
