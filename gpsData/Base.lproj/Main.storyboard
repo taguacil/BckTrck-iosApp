@@ -60,13 +60,13 @@
                             </connections>
                         </barButtonItem>
                         <barButtonItem width="101" style="plain" systemItem="fixedSpace" id="blb-Ee-mbv"/>
-                        <barButtonItem title="Compute" id="Dq5-2s-3eH"/>
-                        <barButtonItem width="300" style="plain" systemItem="fixedSpace" id="q81-1m-dFs">
+                        <barButtonItem title="Compute" id="Dq5-2s-3eH">
                             <connections>
-                                <action selector="computeButton:" destination="lVk-b5-bPX" id="fgR-Cj-lwh"/>
-                                <segue destination="0VA-zY-95g" kind="showDetail" identifier="ShowComputed" id="8Ms-2r-uWA"/>
+                                <action selector="computeButton:" destination="lVk-b5-bPX" id="PCc-Yl-2dm"/>
+                                <segue destination="0VA-zY-95g" kind="showDetail" identifier="ShowComputed" id="jIX-gm-bTS"/>
                             </connections>
                         </barButtonItem>
+                        <barButtonItem width="300" style="plain" systemItem="fixedSpace" id="q81-1m-dFs"/>
                         <barButtonItem systemItem="search" id="wtg-OE-FOe">
                             <connections>
                                 <segue destination="0VA-zY-95g" kind="show" identifier="ShowRoute" id="eDt-xl-YAl"/>
@@ -348,6 +348,6 @@
         </scene>
     </scenes>
     <inferredMetricsTieBreakers>
-        <segue reference="8Ms-2r-uWA"/>
+        <segue reference="jIX-gm-bTS"/>
     </inferredMetricsTieBreakers>
 </document>

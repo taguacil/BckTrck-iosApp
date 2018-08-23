@@ -6,6 +6,22 @@
 //  Copyright © 2018 Taimir Aguacil. All rights reserved.
 //
 
+/*
+ Init with location vector
+ Downsample by random sampling
+ Transform to ValueArray
+ Normalize
+ Compute DCT of eye(N) and pick on N*ratio or comupte directly
+ Perform Lasso
+ Get the weights
+ Perform IDCT
+ Compute MSE
+ Revert the normalization
+ Send back the reconstructed signal
+ Plot both paths and display accuracy in %
+ */
+
+import Accelerate
 import Upsurge
 import MachineLearningKit
 import CoreLocation
@@ -25,22 +41,51 @@ extension Array {
 class CompressSensing {
     
     //MARK: Properties
-    var weights: Matrix<Float>!
+    var weights_lat: Matrix<Float>!
+    var weights_lon: Matrix<Float>!
     var totalNumberOfSamples : Int
-    var latArray_org: [Double]
-    var lonArray_org : [Double]
-    var latValArray : ValueArray<Double>
-    var lonValArray : ValueArray<Double>
+    var latArray_org: [Float]
+    var lonArray_org : [Float]
+    var lat_est : [Float]
+    var lon_est : [Float]
+    var latValArray : Array<Float>
+    var lonValArray : Array<Float>
+    var realVector : ValueArray<Float>
+    
+    lazy var dctSetupForward: vDSP_DFT_Setup = {
+        guard let setup = vDSP_DCT_CreateSetup(
+            nil,
+            vDSP_Length(totalNumberOfSamples),
+            .II)else {
+                fatalError("can't create forward vDSP_DFT_Setup")
+        }
+        return setup
+    }()
+    
+    lazy var dctSetupInverse: vDSP_DFT_Setup = {
+        guard let setup = vDSP_DCT_CreateSetup(
+            nil,
+            vDSP_Length(totalNumberOfSamples),
+            .III) else {
+                fatalError("can't create inverse vDSP_DFT_Setup")
+        }
+        
+        return setup
+    }()
     
     let numberOfSamples : Int
-    let ratio = 0.1
+    let ratio = 1.0
+    let l1_penalty = Float(0.01) // learning rate
+    let tolerance = Float(0.0001)
+    let lassModel = LassoRegression()
     
     //Mark: Initializer
     init?(locationVector: [CLLocation]) {
         
         self.latArray_org = []
         self.lonArray_org = []
-        
+        self.lat_est = []
+        self.lon_est = []
         
         // Extract the coordinates from the location vector if it exists
         guard !locationVector.isEmpty else {
@@ -50,18 +95,27 @@ class CompressSensing {
         
         self.totalNumberOfSamples = locationVector.count
         self.numberOfSamples = Int(floor(Double(totalNumberOfSamples)*ratio))
-        self.latValArray = ValueArray<Double> (capacity: numberOfSamples)
-        self.lonValArray = ValueArray<Double> (capacity: numberOfSamples)
+        self.latValArray = Array<Float> (repeating:0, count: Int(numberOfSamples))
+        self.lonValArray = Array<Float> (repeating:0, count: Int(numberOfSamples))
+        self.realVector = ValueArray<Float> (capacity: totalNumberOfSamples)
         
         for item in locationVector {
-            self.latArray_org.append(item.coordinate.latitude)
-            self.lonArray_org.append(item.coordinate.longitude)
+            self.latArray_org.append(Float(item.coordinate.latitude))
+            self.lonArray_org.append(Float(item.coordinate.longitude))
         }
         
     }
     
-    //MARK : RandomSampling and conversion to 2 Upsurge vectors
-    func randomSampling() {
+    //MARK: DeInit
+    deinit {
+        vDSP_DFT_DestroySetup(dctSetupForward)
+        vDSP_DFT_DestroySetup(dctSetupInverse)
+    }
+    
+    //MARK : Class methods
+    /* RandomSampling and conversion to 2 Upsurge vectors */
+    func randomSampling() -> [Int]{
+        os_log("Random sampling", log: OSLog.default, type: .debug)
         let indices = Array(0...totalNumberOfSamples-1)
         
         var downSampledIndices = indices[randomPick: numberOfSamples]
@@ -69,10 +123,73 @@ class CompressSensing {
         
         // Put indices element in upsurge vectors
         for item in downSampledIndices {
-            latValArray.append(latValArray[item])
-            lonValArray.append(lonValArray[item])
+            latValArray.append(latArray_org[item])
+            lonValArray.append(lonArray_org[item])
         }
+        return downSampledIndices
     }
     
+    /* Performs a real to read forward DCT  */
+    func forwardDCT<M: LinearType>(_ input: M) -> [Float] where M.Element == Float {
+        os_log("Forward DCT", log: OSLog.default, type: .debug)
+        var results = Array<Float>(repeating:0, count: Int(totalNumberOfSamples))
+        realVector.assign(input) // append here is wrong 
+        vDSP_DCT_Execute(dctSetupForward,
+                         realVector.pointer,
+                         &results)
+        
+        return results
+    }
+    
+    /* Performs a real to read forward IDCT  */
+    func inverseDCT<M: LinearType>(_ input: M) -> [Float] where M.Element == Float {
+        os_log("Inverse DCT", log: OSLog.default, type: .debug)
+        var results = Array<Float>(repeating:0, count: Int(totalNumberOfSamples))
+        realVector.assignFrom(input)
+        vDSP_DCT_Execute(dctSetupInverse,
+                         realVector.pointer,
+                         &results)
+        return results
+    }
+    
+    /* Performs dct(eye[samples]) */
+    func eyeDCT(downSampledIndices: [Int]) -> [Array<Float>] {
+        os_log("Identiy DCT function", log: OSLog.default, type: .debug)
+        var pulseVector = Array<Float>(repeating: 0.0, count: totalNumberOfSamples)
+        var dctMat = Array<Array<Float>>() // TODO not efficient
+        for item in downSampledIndices {
+            pulseVector[item] = 1.0
+            let dctVector = forwardDCT(pulseVector)
+            pulseVector[item] = 0.0
+            dctMat.append(dctVector)
+        }
+        return dctMat
+    }
+    
+    /* Performs Lasso regression */
+    func lassoReg (dctMat : [Array<Float>]){
+        os_log("Lasso regression function", log: OSLog.default, type: .debug)
+        // Set Initial Weights
+        let initial_weights_lat = Matrix<Float>(rows: totalNumberOfSamples, columns: 1, repeatedValue: 0)
+        let initial_weights_lon = Matrix<Float>(rows: totalNumberOfSamples, columns: 1, repeatedValue: 0)
+        weights_lat = try! lassModel.train(dctMat, output: latValArray, initialWeights: initial_weights_lat, l1Penalty: l1_penalty, tolerance: tolerance)
+        weights_lon = try! lassModel.train(dctMat, output: latValArray, initialWeights: initial_weights_lon, l1Penalty: l1_penalty, tolerance: tolerance)
+    }
+    
+    /* Performs IDCT of weights */
+    func IDCT_weights() {
+        os_log("IDCT of weights", log: OSLog.default, type: .debug)
+            lat_est = inverseDCT(weights_lat.column(1))
+            lon_est = inverseDCT(weights_lon.column(1))
+    }
+    
+    /* Perform entire computation */
+    func compute()  {
+        let downSampledIndices = randomSampling()
+        let dctMat = eyeDCT(downSampledIndices: downSampledIndices)
+        lassoReg(dctMat: dctMat)
+        IDCT_weights()
+        
+    }
     
 }

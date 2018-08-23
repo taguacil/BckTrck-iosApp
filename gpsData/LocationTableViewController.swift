@@ -137,6 +137,11 @@ class LocationTableViewController: UITableViewController, CLLocationManagerDeleg
                 fatalError("Unexpected destination: \(segue.destination)")
             }
             routeViewController.locationVector = locationVector
+            if let CS = CompressSensing(locationVector: locationVector)
+            {
+                os_log("Computation starts...", log: OSLog.default, type: .debug)
+                CS.compute()
+            }
             
             
         default:
@@ -270,7 +275,6 @@ class LocationTableViewController: UITableViewController, CLLocationManagerDeleg
             self.navigationItem.rightBarButtonItem = playBtn
             locationManager.stopUpdatingLocation()
         }
-        
         
         
     }
