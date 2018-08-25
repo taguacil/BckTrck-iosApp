@@ -140,8 +140,9 @@ class LocationTableViewController: UITableViewController, CLLocationManagerDeleg
             if let CS = CompressSensing(locationVector: locationVector)
             {
                 os_log("Computation starts...", log: OSLog.default, type: .debug)
-                CS.compute()
+                routeViewController.est_coord = CS.compute()
             }
+            
             
             
         default:

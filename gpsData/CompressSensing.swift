@@ -80,6 +80,7 @@ class CompressSensing {
     let ratio = 1.0 // with .x because double
     let l1_penalty = Float(0.01) // learning rate
     let tolerance = Float(0.0001)
+    let iteration = 500
     let lassModel = LassoRegression()
     
     //Mark: Initializer
@@ -198,12 +199,12 @@ class CompressSensing {
         // Set Initial Weights
         let initial_weights_lat = Matrix<Float>(rows: totalNumberOfSamples+1, columns: 1, repeatedValue: 0)
         let initial_weights_lon = Matrix<Float>(rows: totalNumberOfSamples+1, columns: 1, repeatedValue: 0)
-        weights_lat = try! lassModel.train(dctMat, output: latValArray, initialWeights: initial_weights_lat, l1Penalty: l1_penalty, tolerance: tolerance)
+        weights_lat = try! lassModel.train(dctMat, output: latValArray, initialWeights: initial_weights_lat, l1Penalty: l1_penalty, tolerance: tolerance, iteration : iteration)
         print(dctMat.description)
         print(latValArray.description)
         print(weights_lat.description)
         print(weights_lat.column(1).description)
-        weights_lon = try! lassModel.train(dctMat, output: latValArray, initialWeights: initial_weights_lon, l1Penalty: l1_penalty, tolerance: tolerance)
+        weights_lon = try! lassModel.train(dctMat, output: latValArray, initialWeights: initial_weights_lon, l1Penalty: l1_penalty, tolerance: tolerance, iteration : iteration)
     }
     
     /* Performs IDCT of weights */
@@ -216,12 +217,16 @@ class CompressSensing {
     }
     
     /* Perform entire computation */
-    func compute()  {
+    func compute() -> [CLLocationCoordinate2D] {
         let downSampledIndices = randomSampling()
         let dctMat = eyeDCT(downSampledIndices: downSampledIndices)
         lassoReg(dctMat: dctMat)
         IDCT_weights()
-        
+        var est_coord = [CLLocationCoordinate2D]()
+        for item in 0..<lat_est.count{
+            est_coord.append(CLLocationCoordinate2DMake(Double(lat_est[item]), Double(lon_est[item])))
+        }
+        return est_coord
     }
     
 }

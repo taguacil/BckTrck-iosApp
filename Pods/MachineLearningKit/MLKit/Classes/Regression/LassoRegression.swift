@@ -52,9 +52,11 @@ open class LassoRegression {
 
      - returns:
      */
-    open func train(_ features: [Array<Float>], output: Array<Float>, initialWeights: Matrix<Float>, l1Penalty: Float, tolerance: Float) throws -> Matrix<Float> {
-        // Error Handeling
-
+    open func train(_ features: [Array<Float>], output: Array<Float>, initialWeights: Matrix<Float>, l1Penalty: Float, tolerance: Float, iteration: Int) throws -> Matrix<Float> {
+        // Error Handeling // Modified by Taimir 25.08.2018
+        guard iteration > 0 else {
+            fatalError("Number of iteration cannot be smaller or equal to 0")
+        }
         // Check Feature Length
         var featureLength = 0
 
@@ -75,8 +77,9 @@ open class LassoRegression {
         let normalizedFeatureMatrix = transpose(normalize(featureMatrix))
 
         var converged: Bool = false
-
-        while converged == false {
+        var iter = 0
+        
+        while (converged == false && iter<iteration) {
 
             var changeForFullCycle: [Float] = []
 
@@ -96,6 +99,7 @@ open class LassoRegression {
             if maxChange < tolerance {
                 converged = true
             }
+            iter+=1
         }
 
         // set the weights

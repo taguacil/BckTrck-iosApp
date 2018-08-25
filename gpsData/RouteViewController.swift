@@ -11,10 +11,13 @@ import MapKit
 import os.log
 
 class RouteViewController: UIViewController, MKMapViewDelegate, LocationTableViewDelegate {
-
+    
     //MARK: Properties
     @IBOutlet weak var mapView: MKMapView!
     var locationVector : [CLLocation]?
+    var est_coord : [CLLocationCoordinate2D]?
+    var isEstimated = false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -27,15 +30,26 @@ class RouteViewController: UIViewController, MKMapViewDelegate, LocationTableVie
             } else {
                 zoomToRegion(initialLocation: locationVector.first!)
                 let annotations = getMapAnnotations(locationVector: locationVector)
-                // Add mappoints to Map
-                mapView.showAnnotations(annotations, animated: true)
                 // Connect all the mappoints using Poly line.
                 var points = [CLLocationCoordinate2D]()
                 for annotation in annotations {
                     points.append(annotation.coordinate)
                 }
                 let polyline = MKPolyline(coordinates: points, count: points.count)
+                if let est_coord = est_coord
+                {
+                    isEstimated = true
+                    let polylineEst = MKPolyline(coordinates: est_coord, count: est_coord.count)
+                    mapView.add(polylineEst)
+                }
+                else
+                {
+                    // Add mappoints to Map
+                    mapView.showAnnotations(annotations, animated: true)
+                }
+                isEstimated=false
                 mapView.add(polyline)
+                
             }
         }
     }
@@ -52,7 +66,7 @@ class RouteViewController: UIViewController, MKMapViewDelegate, LocationTableVie
      // Get the new view controller using segue.destinationViewController.
      // Pass the selected object to the new view controller.
      }
-    */
+     */
     
     //MARK: LocationTabViewDelegate
     func updateLocation(_ locationTableViewController : LocationTableViewController, didGetNewLocation newLocation: CLLocation) {
@@ -66,19 +80,24 @@ class RouteViewController: UIViewController, MKMapViewDelegate, LocationTableVie
         var points = [CLLocationCoordinate2D]()
         let beforeLastElem =  locationVector![(locationVector?.count)!-2]
         points.append(beforeLastElem.coordinate)
-            points.append(newLocation.coordinate)
+        points.append(newLocation.coordinate)
         let polyline = MKPolyline(coordinates: points, count: points.count)
         mapView.add(polyline)
     }
     
     //MARK:- MapViewDelegate methods
     func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer{
-            let polylineRenderer = MKPolylineRenderer(overlay: overlay)
+        let polylineRenderer = MKPolylineRenderer(overlay: overlay)
+        if (isEstimated){
+            polylineRenderer.strokeColor = UIColor.red
+        }
+        else{
             polylineRenderer.strokeColor = UIColor.blue
-            polylineRenderer.lineWidth = 4.0
-            return polylineRenderer
+        }
+        polylineRenderer.lineWidth = 3.0
+        return polylineRenderer
     }
-
+    
     //MARK:- Zoom to region
     func zoomToRegion(initialLocation : CLLocation ) {
         let region = MKCoordinateRegion(center: initialLocation.coordinate, span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01))
@@ -90,11 +109,11 @@ class RouteViewController: UIViewController, MKMapViewDelegate, LocationTableVie
         var annotations = [MKAnnotation]()
         
         //iterate and create annotations
-            for item in locationVector {
-                let myAnnotation : MKPointAnnotation = MKPointAnnotation()
-                myAnnotation.coordinate = item.coordinate
-                myAnnotation.title = "\(item.timestamp)"
-                annotations.append(myAnnotation)
+        for item in locationVector {
+            let myAnnotation : MKPointAnnotation = MKPointAnnotation()
+            myAnnotation.coordinate = item.coordinate
+            myAnnotation.title = "\(item.timestamp)"
+            annotations.append(myAnnotation)
         }
         return annotations
     }
