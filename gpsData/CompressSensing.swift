@@ -38,9 +38,10 @@ extension Array {
     }
 }
 
-class CompressSensing {
+class CompressSensing : NSObject, NSCoding {
     
     //MARK: Properties
+    let locationVector : [CLLocation]?
     var weights_lat: Matrix<Float>!
     var weights_lon: Matrix<Float>!
     var totalNumberOfSamples : Int
@@ -83,8 +84,18 @@ class CompressSensing {
     let iteration = 500
     let lassModel = LassoRegression()
     
+    //MARK: Archiving Paths
+    
+    static let DocumentsDirectory = FileManager().urls(for: .documentDirectory, in: .userDomainMask).first!
+    static let ArchiveURL = DocumentsDirectory.appendingPathComponent("locationVector")
+    
+    //MARK: Types
+    struct PropertyKey {
+        static let locationVector = "locationVector"
+    }
+    
     //Mark: Initializer
-    init?(locationVector: [CLLocation]) {
+    init?(inputLocationVector: [CLLocation]) {
         
         self.latArray_org = []
         self.lonArray_org = []
@@ -94,17 +105,17 @@ class CompressSensing {
         self.lonValArray = []
         
         // Extract the coordinates from the location vector if it exists
-        guard !locationVector.isEmpty else {
+        guard !inputLocationVector.isEmpty else {
             os_log("No data", log: OSLog.default, type: .debug)
             return nil
         }
-        
-        self.totalNumberOfSamples = locationVector.count
+        self.locationVector = inputLocationVector
+        self.totalNumberOfSamples = inputLocationVector.count
         self.numberOfSamples = Int(floor(Double(totalNumberOfSamples)*ratio))
         //self.latValArray = Array<Float> (repeating:0, count: Int(numberOfSamples))
         //self.lonValArray = Array<Float> (repeating:0, count: Int(numberOfSamples))
         
-        for item in locationVector {
+        for item in inputLocationVector {
             self.latArray_org.append(Float(item.coordinate.latitude))
             self.lonArray_org.append(Float(item.coordinate.longitude))
         }
@@ -117,9 +128,23 @@ class CompressSensing {
         vDSP_DFT_DestroySetup(dctSetupInverse)
     }
     
-    //MARK : Class methods
-    /* RandomSampling and conversion to 2 Upsurge vectors */
-    func randomSampling() -> [Int]{
+    //MARK: NSCoding
+    func encode(with aCoder: NSCoder) {
+        aCoder.encode(locationVector, forKey: PropertyKey.locationVector)
+    }
+    
+    required convenience init?(coder aDecoder: NSCoder) {
+        // The name is required. If we cannot decode a name string, the initializer should fail.
+        guard let locationVector = aDecoder.decodeObject(forKey: PropertyKey.locationVector) as? [CLLocation] else {
+            os_log("Unable to decode the locationVector for a CompressSensing object.", log: OSLog.default, type: .debug)
+            return nil
+        }
+        // Must call designated initializer.
+        self.init(inputLocationVector: locationVector)
+    }
+    
+    //MARK: RandomSampling and conversion to 2 Upsurge vectors
+    private func randomSampling() -> [Int]{
         os_log("Random sampling", log: OSLog.default, type: .debug)
         let indices = Array(0...totalNumberOfSamples-1)
         
@@ -140,8 +165,8 @@ class CompressSensing {
         return downSampledIndices
     }
     
-    /* Performs a real to read forward DCT  */
-    func forwardDCT<M: LinearType>(_ input: M) -> [Float] where M.Element == Float {
+    //MARK: DCT operations
+    private func forwardDCT<M: LinearType>(_ input: M) -> [Float] where M.Element == Float {
         os_log("Forward DCT", log: OSLog.default, type: .debug)
         var results = Array<Float>(repeating:0, count: Int(totalNumberOfSamples))
         let realVector = ValueArray<Float>(input)
@@ -153,7 +178,7 @@ class CompressSensing {
     }
     
     /* Performs a real to read forward IDCT  */
-    func inverseDCT<M: LinearType>(_ input: M) -> [Float] where M.Element == Float {
+    private func inverseDCT<M: LinearType>(_ input: M) -> [Float] where M.Element == Float {
         os_log("Inverse DCT", log: OSLog.default, type: .debug)
         var results = Array<Float>(repeating:0, count: Int(totalNumberOfSamples))
         let realVector = ValueArray<Float>(input)
@@ -163,8 +188,8 @@ class CompressSensing {
         return results
     }
     
-    /* Performs dct(eye[samples]) */
-    func eyeDCT(downSampledIndices: [Int]) -> [Array<Float>] {
+    //MARK: DCT of Identity
+    private func eyeDCT(downSampledIndices: [Int]) -> [Array<Float>] {
         os_log("Identiy DCT function", log: OSLog.default, type: .debug)
         var pulseVector = Array<Float>(repeating: 0.0, count: totalNumberOfSamples)
         let dctVec = ValueArray<Float>(capacity: numberOfSamples*totalNumberOfSamples)
@@ -193,8 +218,8 @@ class CompressSensing {
         return dctArrayMat
     }
     
-    /* Performs Lasso regression */
-    func lassoReg (dctMat : [Array<Float>]){
+    //MARK: LASSO regression
+    private func lassoReg (dctMat : [Array<Float>]){
         os_log("Lasso regression function", log: OSLog.default, type: .debug)
         // Set Initial Weights
         let initial_weights_lat = Matrix<Float>(rows: totalNumberOfSamples+1, columns: 1, repeatedValue: 0)
@@ -208,7 +233,7 @@ class CompressSensing {
     }
     
     /* Performs IDCT of weights */
-    func IDCT_weights() {
+    private func IDCT_weights() {
         os_log("IDCT of weights", log: OSLog.default, type: .debug)
             lat_est = inverseDCT(weights_lat.column(1))
             lon_est = inverseDCT(weights_lon.column(1))
@@ -216,7 +241,7 @@ class CompressSensing {
         lon_est = Array((lon_est*stdLon)+meanLon)
     }
     
-    /* Perform entire computation */
+    //MARK: Complete computation
     func compute() -> [CLLocationCoordinate2D] {
         let downSampledIndices = randomSampling()
         let dctMat = eyeDCT(downSampledIndices: downSampledIndices)

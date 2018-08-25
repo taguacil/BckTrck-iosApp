@@ -41,6 +41,11 @@ class LocationTableViewController: UITableViewController, CLLocationManagerDeleg
         // Handle the location field's user input through delegate callbacks
         locationManager.delegate = self
         enableBasicLocationServices()
+        
+        // Load any saved locationData.
+        if let savedLocation = loadLocation() {
+            locationVector += savedLocation
+        }
     }
     
     override func didReceiveMemoryWarning() {
@@ -84,6 +89,7 @@ class LocationTableViewController: UITableViewController, CLLocationManagerDeleg
             // Delete the row from the data source
             locationVector.remove(at: indexPath.row)
             tableView.deleteRows(at: [indexPath], with: .fade)
+            saveLocation()
         } else if editingStyle == .insert {
             // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
         }    
@@ -137,13 +143,11 @@ class LocationTableViewController: UITableViewController, CLLocationManagerDeleg
                 fatalError("Unexpected destination: \(segue.destination)")
             }
             routeViewController.locationVector = locationVector
-            if let CS = CompressSensing(locationVector: locationVector)
+            if let CS = CompressSensing(inputLocationVector: locationVector)
             {
                 os_log("Computation starts...", log: OSLog.default, type: .debug)
                 routeViewController.est_coord = CS.compute()
             }
-            
-            
             
         default:
             fatalError("Unexpected Segue Identifier; \(String(describing: segue.identifier))")
@@ -195,7 +199,9 @@ class LocationTableViewController: UITableViewController, CLLocationManagerDeleg
             runningCode = false
             self.navigationItem.rightBarButtonItem = playBtn
             locationManager.stopUpdatingLocation()
-        } else {
+            saveLocation()
+        }
+        else {
             runningCode = true
             self.navigationItem.rightBarButtonItem = stopBtn
             startLocationAcquisition()
@@ -203,23 +209,13 @@ class LocationTableViewController: UITableViewController, CLLocationManagerDeleg
         
     }
     @IBAction func clearButton(_ sender: UIBarButtonItem) {
-        // Stop acquisition
-        if runningCode {
-            runningCode = false
-            self.navigationItem.rightBarButtonItem = playBtn
-            locationManager.stopUpdatingLocation()
-        }
         locationVector.removeAll()
+        stopAcquisition()
         tableView.reloadData()
     }
     
     @IBAction func shareButton(_ sender: UIBarButtonItem) {
-        // Stop acquisition
-        if runningCode {
-            runningCode = false
-            self.navigationItem.rightBarButtonItem = playBtn
-            locationManager.stopUpdatingLocation()
-        }
+        stopAcquisition()
         
         let fileName = "gpsLocation_\(String(describing: locationVector.first?.timestamp)).csv "
         let path = NSURL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(fileName)
@@ -270,17 +266,20 @@ class LocationTableViewController: UITableViewController, CLLocationManagerDeleg
     }
     
     @IBAction func computeButton(_ sender: UIBarButtonItem) {
+        stopAcquisition()
+    }
+    
+    //MARK: Private Properties
+    private func stopAcquisition (){
         // Stop acquisition
         if runningCode {
             runningCode = false
             self.navigationItem.rightBarButtonItem = playBtn
             locationManager.stopUpdatingLocation()
         }
-        
-        
+        saveLocation()
     }
     
-    //MARK: Private Properties
     private func enableBasicLocationServices() {
         
         switch CLLocationManager.authorizationStatus() {
@@ -321,5 +320,19 @@ class LocationTableViewController: UITableViewController, CLLocationManagerDeleg
         } else {
             // Update your app’s UI to show that the location is unavailable.
         }
+    }
+    
+    private func saveLocation() {
+        let isSuccessfulSave = NSKeyedArchiver.archiveRootObject(locationVector, toFile: CompressSensing.ArchiveURL.path)
+        
+        if isSuccessfulSave {
+            os_log("Location successfully saved.", log: OSLog.default, type: .debug)
+        } else {
+            os_log("Failed to save location...", log: OSLog.default, type: .error)
+        }
+    }
+    
+    private func loadLocation() -> [CLLocation]? {
+        return NSKeyedUnarchiver.unarchiveObject(withFile: CompressSensing.ArchiveURL.path) as? [CLLocation]
     }
 }
