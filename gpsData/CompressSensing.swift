@@ -78,8 +78,8 @@ class CompressSensing : NSObject, NSCoding {
     }()
     
     let numberOfSamples : Int
-    let ratio = 1.0 // with .x because double
-    //let ratio = 0.09375*4
+    //let ratio = 1.0 // with .x because double
+    let ratio = 0.09375*4
     let l1_penalty = Float(0.01) // learning rate
     let tolerance = Float(0.0001)
     let iteration = 500
@@ -174,7 +174,6 @@ class CompressSensing : NSObject, NSCoding {
         vDSP_DCT_Execute(dctSetupForward,
                          realVector.pointer,
                          &results)
-        
         return results
     }
     
@@ -241,25 +240,29 @@ class CompressSensing : NSObject, NSCoding {
     }
     
     /* Performs IDCT of weights */
-    private func IDCT_weights() {
+    private func IDCT_weights(downSampledIndices: [Int]) {
         os_log("IDCT of weights", log: OSLog.default, type: .debug)
-        lat_est = inverseDCT(weights_lat.column(1))
-        lon_est = inverseDCT(weights_lon.column(1))
-        /*
-         lat_cor = Array(lat_cor*(1/Float(sqrt(ratio*0.5*Double(totalNumberOfSamples)))))
-         lon_cor = Array(lon_cor*(1/Float(sqrt(ratio*0.5*Double(totalNumberOfSamples)))))
-         
-         let delta_lat = mean(latValArray-lat_cor)
-         let delta_lon = mean(lonValArray-lon_cor)
-         let delta_lat = Float(0)
-         let delta_lon = Float(0)
-         
-         lat_est = Array((lat_est+delta_lat)*stdLat+meanLat)
-         lon_est = Array((lon_est+delta_lon)*stdLon+meanLon)
-         */
+        var lat_cor = inverseDCT(weights_lat.column(1))
+        var lon_cor = inverseDCT(weights_lon.column(1))
+        lat_cor = Array(lat_cor*(1/Float(sqrt(ratio*0.5*Double(totalNumberOfSamples)))))
+        lon_cor = Array(lon_cor*(1/Float(sqrt(ratio*0.5*Double(totalNumberOfSamples)))))
         
-        lat_est = Array((lat_est)*(stdLat/Float(sqrt(ratio*0.5*Double(totalNumberOfSamples))))+meanLat)
-        lon_est = Array((lon_est)*(stdLon/Float(sqrt(ratio*0.5*Double(totalNumberOfSamples))))+meanLon)
+        var vec_lat = Array<Float>()
+        var vec_lon = Array<Float>()
+        
+        for index in 0..<downSampledIndices.count
+        {
+            vec_lat.append(latValArray[index]-lat_cor[downSampledIndices[index]])
+            vec_lon.append(lonValArray[index]-lon_cor[downSampledIndices[index]])
+        }
+        let delta_lat = mean(vec_lat)
+        let delta_lon = mean(vec_lon)
+        
+         lat_est = Array((lat_cor+delta_lat)*stdLat+meanLat)
+         lon_est = Array((lon_cor+delta_lon)*stdLon+meanLon)
+        
+        //lat_est = Array((lat_est)*(stdLat/Float(sqrt(ratio*0.5*Double(totalNumberOfSamples))))+meanLat)
+        //lon_est = Array((lon_est)*(stdLon/Float(sqrt(ratio*0.5*Double(totalNumberOfSamples))))+meanLon)
     }
     
     //MARK: Complete computation
@@ -267,7 +270,7 @@ class CompressSensing : NSObject, NSCoding {
         let downSampledIndices = randomSampling()
         let dctMat = eyeDCT(downSampledIndices: downSampledIndices)
         lassoReg(dctMat: dctMat)
-        IDCT_weights()
+        IDCT_weights(downSampledIndices: downSampledIndices)
         var est_coord = [CLLocationCoordinate2D]()
         for item in 0..<lat_est.count{
             est_coord.append(CLLocationCoordinate2DMake(Double(lat_est[item]), Double(lon_est[item])))
