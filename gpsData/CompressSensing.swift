@@ -258,19 +258,23 @@ class CompressSensing : NSObject, NSCoding {
         let delta_lat = mean(vec_lat)
         let delta_lon = mean(vec_lon)
         
-         lat_est = Array((lat_cor+delta_lat)*stdLat+meanLat)
-         lon_est = Array((lon_cor+delta_lon)*stdLon+meanLon)
-        
-        //lat_est = Array((lat_est)*(stdLat/Float(sqrt(ratio*0.5*Double(totalNumberOfSamples))))+meanLat)
-        //lon_est = Array((lon_est)*(stdLon/Float(sqrt(ratio*0.5*Double(totalNumberOfSamples))))+meanLon)
+        lat_est = Array((lat_cor+delta_lat)*stdLat+meanLat)
+        lon_est = Array((lon_cor+delta_lon)*stdLon+meanLon)
     }
-    
+
+    /* MSE */
+    func MSE() -> Float {
+        let MSE = rmsq((lat_est-latArray_org)+(lon_est-lonArray_org))
+        print("Total latlon MSE \(MSE)")
+        return MSE
+    }
     //MARK: Complete computation
     func compute() -> [CLLocationCoordinate2D] {
         let downSampledIndices = randomSampling()
         let dctMat = eyeDCT(downSampledIndices: downSampledIndices)
         lassoReg(dctMat: dctMat)
         IDCT_weights(downSampledIndices: downSampledIndices)
+        let _ = MSE()
         var est_coord = [CLLocationCoordinate2D]()
         for item in 0..<lat_est.count{
             est_coord.append(CLLocationCoordinate2DMake(Double(lat_est[item]), Double(lon_est[item])))
