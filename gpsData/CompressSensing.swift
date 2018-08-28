@@ -79,6 +79,7 @@ class CompressSensing : NSObject, NSCoding {
     
     let numberOfSamples : Int
     let ratio = 1.0 // with .x because double
+    //let ratio = 0.09375*4
     let l1_penalty = Float(0.01) // learning rate
     let tolerance = Float(0.0001)
     let iteration = 500
@@ -202,8 +203,11 @@ class CompressSensing : NSObject, NSCoding {
             dctVec.append(contentsOf: dctVector)
         }
         dctMat = dctVec.toMatrix(rows: numberOfSamples, columns: totalNumberOfSamples)
-        print(dctVec.description)
-        print(dctMat.description)
+        
+        /* print debugging
+         print(dctVec.description)
+         print(dctMat.description)
+         */
         
         var temp = Array<Float>()
         for col in 0..<dctMat.columns
@@ -225,20 +229,37 @@ class CompressSensing : NSObject, NSCoding {
         let initial_weights_lat = Matrix<Float>(rows: totalNumberOfSamples+1, columns: 1, repeatedValue: 0)
         let initial_weights_lon = Matrix<Float>(rows: totalNumberOfSamples+1, columns: 1, repeatedValue: 0)
         weights_lat = try! lassModel.train(dctMat, output: latValArray, initialWeights: initial_weights_lat, l1Penalty: l1_penalty, tolerance: tolerance, iteration : iteration)
-        print(dctMat.description)
-        print(latValArray.description)
-        print(weights_lat.description)
-        print(weights_lat.column(1).description)
-        weights_lon = try! lassModel.train(dctMat, output: latValArray, initialWeights: initial_weights_lon, l1Penalty: l1_penalty, tolerance: tolerance, iteration : iteration)
+        
+        /* print debugging
+         print(dctMat.description)
+         print(latValArray.description)
+         print(weights_lat.description)
+         print(weights_lat.column(1).description)
+         */
+        
+        weights_lon = try! lassModel.train(dctMat, output: lonValArray, initialWeights: initial_weights_lon, l1Penalty: l1_penalty, tolerance: tolerance, iteration : iteration)
     }
     
     /* Performs IDCT of weights */
     private func IDCT_weights() {
         os_log("IDCT of weights", log: OSLog.default, type: .debug)
-            lat_est = inverseDCT(weights_lat.column(1))
-            lon_est = inverseDCT(weights_lon.column(1))
-        lat_est = Array((lat_est*stdLat)+meanLat)
-        lon_est = Array((lon_est*stdLon)+meanLon)
+        lat_est = inverseDCT(weights_lat.column(1))
+        lon_est = inverseDCT(weights_lon.column(1))
+        /*
+         lat_cor = Array(lat_cor*(1/Float(sqrt(ratio*0.5*Double(totalNumberOfSamples)))))
+         lon_cor = Array(lon_cor*(1/Float(sqrt(ratio*0.5*Double(totalNumberOfSamples)))))
+         
+         let delta_lat = mean(latValArray-lat_cor)
+         let delta_lon = mean(lonValArray-lon_cor)
+         let delta_lat = Float(0)
+         let delta_lon = Float(0)
+         
+         lat_est = Array((lat_est+delta_lat)*stdLat+meanLat)
+         lon_est = Array((lon_est+delta_lon)*stdLon+meanLon)
+         */
+        
+        lat_est = Array((lat_est)*(stdLat/Float(sqrt(ratio*0.5*Double(totalNumberOfSamples))))+meanLat)
+        lon_est = Array((lon_est)*(stdLon/Float(sqrt(ratio*0.5*Double(totalNumberOfSamples))))+meanLon)
     }
     
     //MARK: Complete computation
