@@ -40,7 +40,7 @@ open class PopulationManager {
         // Save and remove that individual from the list of genomes
         for (i, genome) in genomes.enumerated() {
             if genome.fitness > maxFitness {
-                maxFitness = genome.fitness as! Float
+                maxFitness = genome.fitness 
                 firstBestGenome = genome
                 indexOfBestGenome = i
             }

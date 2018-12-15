@@ -40,7 +40,7 @@ class RouteViewController: UIViewController, MKMapViewDelegate, LocationTableVie
                 {
                     isEstimated = true
                     let polylineEst = MKPolyline(coordinates: est_coord, count: est_coord.count)
-                    mapView.add(polylineEst)
+                    mapView.addOverlay(polylineEst)
                 }
                 else
                 {
@@ -48,7 +48,7 @@ class RouteViewController: UIViewController, MKMapViewDelegate, LocationTableVie
                     mapView.showAnnotations(annotations, animated: true)
                 }
                 isEstimated=false
-                mapView.add(polyline)
+                mapView.addOverlay(polyline)
                 
             }
         }
@@ -82,7 +82,7 @@ class RouteViewController: UIViewController, MKMapViewDelegate, LocationTableVie
         points.append(beforeLastElem.coordinate)
         points.append(newLocation.coordinate)
         let polyline = MKPolyline(coordinates: points, count: points.count)
-        mapView.add(polyline)
+        mapView.addOverlay(polyline)
     }
     
     //MARK:- MapViewDelegate methods
