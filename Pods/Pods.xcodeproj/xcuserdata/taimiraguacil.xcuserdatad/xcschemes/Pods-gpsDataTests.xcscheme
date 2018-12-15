@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "0940"
+   LastUpgradeVersion = "0930"
    version = "1.3">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "E181A8156C06826ECDCDA518AC4432DA"
+               BlueprintIdentifier = "438FEB663AE67AF6BDA96FB2AB331C58"
                BuildableName = "Pods_gpsDataTests.framework"
                BlueprintName = "Pods-gpsDataTests"
                ReferencedContainer = "container:Pods.xcodeproj">
@@ -45,7 +45,7 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "E181A8156C06826ECDCDA518AC4432DA"
+            BlueprintIdentifier = "438FEB663AE67AF6BDA96FB2AB331C58"
             BuildableName = "Pods_gpsDataTests.framework"
             BlueprintName = "Pods-gpsDataTests"
             ReferencedContainer = "container:Pods.xcodeproj">

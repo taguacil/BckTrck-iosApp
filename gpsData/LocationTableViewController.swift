@@ -138,16 +138,11 @@ class LocationTableViewController: UITableViewController, CLLocationManagerDeleg
             routeViewController.locationVector = locationVector
             self.delegate = routeViewController
             
-        case "ShowComputed":
-            guard let routeViewController = segue.destination as? RouteViewController else {
+        case "ShowSettings":
+            guard let settingsController = segue.destination as? SettingsController else {
                 fatalError("Unexpected destination: \(segue.destination)")
             }
-            routeViewController.locationVector = locationVector
-            if let CS = CompressSensing(inputLocationVector: locationVector)
-            {
-                os_log("Computation starts...", log: OSLog.default, type: .debug)
-                routeViewController.est_coord = CS.compute()
-            }
+            settingsController.locationVector=locationVector
             
         default:
             fatalError("Unexpected Segue Identifier; \(String(describing: segue.identifier))")

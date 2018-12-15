@@ -42,6 +42,8 @@ class CompressSensing : NSObject, NSCoding {
     
     //MARK: Properties
     let locationVector : [CLLocation]?
+    var iteration : Int?
+    
     var weights_lat: Matrix<Float>!
     var weights_lon: Matrix<Float>!
     var totalNumberOfSamples : Int
@@ -82,7 +84,6 @@ class CompressSensing : NSObject, NSCoding {
     let ratio = 0.09375*4
     let l1_penalty = Float(0.01) // learning rate
     let tolerance = Float(0.0001)
-    let iteration = 500
     let lassModel = LassoRegression()
     
     //MARK: Archiving Paths
@@ -143,6 +144,7 @@ class CompressSensing : NSObject, NSCoding {
         // Must call designated initializer.
         self.init(inputLocationVector: locationVector)
     }
+
     
     //MARK: RandomSampling and conversion to 2 Upsurge vectors
     private func randomSampling() -> [Int]{
@@ -227,7 +229,7 @@ class CompressSensing : NSObject, NSCoding {
         // Set Initial Weights
         let initial_weights_lat = Matrix<Float>(rows: totalNumberOfSamples+1, columns: 1, repeatedValue: 0)
         let initial_weights_lon = Matrix<Float>(rows: totalNumberOfSamples+1, columns: 1, repeatedValue: 0)
-        weights_lat = try! lassModel.train(dctMat, output: latValArray, initialWeights: initial_weights_lat, l1Penalty: l1_penalty, tolerance: tolerance, iteration : iteration)
+        weights_lat = try! lassModel.train(dctMat, output: latValArray, initialWeights: initial_weights_lat, l1Penalty: l1_penalty, tolerance: tolerance, iteration : iteration!)
         
         /* print debugging
          print(dctMat.description)
@@ -236,7 +238,7 @@ class CompressSensing : NSObject, NSCoding {
          print(weights_lat.column(1).description)
          */
         
-        weights_lon = try! lassModel.train(dctMat, output: lonValArray, initialWeights: initial_weights_lon, l1Penalty: l1_penalty, tolerance: tolerance, iteration : iteration)
+        weights_lon = try! lassModel.train(dctMat, output: lonValArray, initialWeights: initial_weights_lon, l1Penalty: l1_penalty, tolerance: tolerance, iteration : iteration!)
     }
     
     /* Performs IDCT of weights */
@@ -280,6 +282,11 @@ class CompressSensing : NSObject, NSCoding {
             est_coord.append(CLLocationCoordinate2DMake(Double(lat_est[item]), Double(lon_est[item])))
         }
         return est_coord
+    }
+    //MARK: Function to set parameters
+    func setParam(maxIter:Int){
+        os_log("Setting algorithm parameters", log: OSLog.default, type: .debug)
+        self.iteration = maxIter
     }
     
 }

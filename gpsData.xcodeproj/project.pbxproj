@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0F220D9B21C3F42900E12B7C /* SettingsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F220D9A21C3F42900E12B7C /* SettingsController.swift */; };
 		0F227BD4212764EA00CF2660 /* CompressSensing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F227BD3212764EA00CF2660 /* CompressSensing.swift */; };
 		0FAC8F04E72B9B5C53D738AE /* Pods_gpsDataTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 82F632CAC419EF20253B33FC /* Pods_gpsDataTests.framework */; };
 		0FCF0529211F492000C3120B /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0FCF0528211F492000C3120B /* MapKit.framework */; };
@@ -43,6 +44,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		0F220D9A21C3F42900E12B7C /* SettingsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsController.swift; sourceTree = "<group>"; };
 		0F227BD3212764EA00CF2660 /* CompressSensing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompressSensing.swift; sourceTree = "<group>"; };
 		0FCF0528211F492000C3120B /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
 		0FCF052A211F4AD000C3120B /* RouteViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteViewController.swift; sourceTree = "<group>"; };
@@ -145,6 +147,7 @@
 				0F227BD3212764EA00CF2660 /* CompressSensing.swift */,
 				0FE70D2A211E3F850087CD70 /* LocationTableViewCell.swift */,
 				0FE70CF9211E05460087CD70 /* Main.storyboard */,
+				0F220D9A21C3F42900E12B7C /* SettingsController.swift */,
 				0FE70CFF211E05480087CD70 /* Assets.xcassets */,
 				0FE70D01211E05480087CD70 /* LaunchScreen.storyboard */,
 				0FE70D04211E05480087CD70 /* Info.plist */,
@@ -404,6 +407,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0F220D9B21C3F42900E12B7C /* SettingsController.swift in Sources */,
 				0FE70D29211E27ED0087CD70 /* LocationTableViewController.swift in Sources */,
 				0FE70D2B211E3F850087CD70 /* LocationTableViewCell.swift in Sources */,
 				0F227BD4212764EA00CF2660 /* CompressSensing.swift in Sources */,
