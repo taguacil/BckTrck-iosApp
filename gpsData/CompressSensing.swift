@@ -43,10 +43,13 @@ class CompressSensing : NSObject, NSCoding {
     //MARK: Properties
     let locationVector : [CLLocation]?
     var iteration : Int?
+    var ratio : Double?
+    var l1_penalty : Float? // learning rate
+    var blockLength : Int?
     
     var weights_lat: Matrix<Float>!
     var weights_lon: Matrix<Float>!
-    var totalNumberOfSamples : Int
+    
     var latArray_org: [Float]
     var lonArray_org : [Float]
     var lat_est : [Float]
@@ -61,7 +64,7 @@ class CompressSensing : NSObject, NSCoding {
     lazy var dctSetupForward: vDSP_DFT_Setup = {
         guard let setup = vDSP_DCT_CreateSetup(
             nil,
-            vDSP_Length(totalNumberOfSamples),
+            vDSP_Length(blockLength!),
             .II)else {
                 fatalError("can't create forward vDSP_DFT_Setup")
         }
@@ -71,7 +74,7 @@ class CompressSensing : NSObject, NSCoding {
     lazy var dctSetupInverse: vDSP_DFT_Setup = {
         guard let setup = vDSP_DCT_CreateSetup(
             nil,
-            vDSP_Length(totalNumberOfSamples),
+            vDSP_Length(blockLength!),
             .III) else {
                 fatalError("can't create inverse vDSP_DFT_Setup")
         }
@@ -79,10 +82,7 @@ class CompressSensing : NSObject, NSCoding {
         return setup
     }()
     
-    let numberOfSamples : Int
-    //let ratio = 1.0 // with .x because double
-    let ratio = 0.09375*4
-    let l1_penalty = Float(0.01) // learning rate
+    var blockSamples : Int
     let tolerance = Float(0.0001)
     let lassModel = LassoRegression()
     
@@ -99,6 +99,8 @@ class CompressSensing : NSObject, NSCoding {
     //Mark: Initializer
     init?(inputLocationVector: [CLLocation]) {
         
+        self.blockSamples = 0
+        
         self.latArray_org = []
         self.lonArray_org = []
         self.lat_est = []
@@ -112,15 +114,8 @@ class CompressSensing : NSObject, NSCoding {
             return nil
         }
         self.locationVector = inputLocationVector
-        self.totalNumberOfSamples = inputLocationVector.count
-        self.numberOfSamples = Int(floor(Double(totalNumberOfSamples)*ratio))
-        //self.latValArray = Array<Float> (repeating:0, count: Int(numberOfSamples))
-        //self.lonValArray = Array<Float> (repeating:0, count: Int(numberOfSamples))
-        
-        for item in inputLocationVector {
-            self.latArray_org.append(Float(item.coordinate.latitude))
-            self.lonArray_org.append(Float(item.coordinate.longitude))
-        }
+        //self.latValArray = Array<Float> (repeating:0, count: Int(blockSamples))
+        //self.lonValArray = Array<Float> (repeating:0, count: Int(blockSamples))
         
     }
     
@@ -144,14 +139,14 @@ class CompressSensing : NSObject, NSCoding {
         // Must call designated initializer.
         self.init(inputLocationVector: locationVector)
     }
-
+    
     
     //MARK: RandomSampling and conversion to 2 Upsurge vectors
     private func randomSampling() -> [Int]{
         os_log("Random sampling", log: OSLog.default, type: .debug)
-        let indices = Array(0...totalNumberOfSamples-1)
+        let indices = Array(0...blockLength!-1)
         
-        var downSampledIndices = indices[randomPick: numberOfSamples]
+        var downSampledIndices = indices[randomPick: blockSamples]
         downSampledIndices  = downSampledIndices.sorted()
         
         // Put indices element in upsurge vectors
@@ -171,7 +166,7 @@ class CompressSensing : NSObject, NSCoding {
     //MARK: DCT operations
     private func forwardDCT<M: LinearType>(_ input: M) -> [Float] where M.Element == Float {
         os_log("Forward DCT", log: OSLog.default, type: .debug)
-        var results = Array<Float>(repeating:0, count: Int(totalNumberOfSamples))
+        var results = Array<Float>(repeating:0, count: Int(blockLength!))
         let realVector = ValueArray<Float>(input)
         vDSP_DCT_Execute(dctSetupForward,
                          realVector.pointer,
@@ -182,7 +177,7 @@ class CompressSensing : NSObject, NSCoding {
     /* Performs a real to read forward IDCT  */
     private func inverseDCT<M: LinearType>(_ input: M) -> [Float] where M.Element == Float {
         os_log("Inverse DCT", log: OSLog.default, type: .debug)
-        var results = Array<Float>(repeating:0, count: Int(totalNumberOfSamples))
+        var results = Array<Float>(repeating:0, count: Int(blockLength!))
         let realVector = ValueArray<Float>(input)
         vDSP_DCT_Execute(dctSetupInverse,
                          realVector.pointer,
@@ -193,9 +188,9 @@ class CompressSensing : NSObject, NSCoding {
     //MARK: DCT of Identity
     private func eyeDCT(downSampledIndices: [Int]) -> [Array<Float>] {
         os_log("Identiy DCT function", log: OSLog.default, type: .debug)
-        var pulseVector = Array<Float>(repeating: 0.0, count: totalNumberOfSamples)
-        let dctVec = ValueArray<Float>(capacity: numberOfSamples*totalNumberOfSamples)
-        var dctMat = Matrix<Float>(rows: numberOfSamples, columns: totalNumberOfSamples)
+        var pulseVector = Array<Float>(repeating: 0.0, count: blockLength!)
+        let dctVec = ValueArray<Float>(capacity: blockSamples*blockLength!)
+        var dctMat = Matrix<Float>(rows: blockSamples, columns: blockLength!)
         var dctArrayMat = Array<Array<Float>>() // TODO not efficient
         for item in downSampledIndices {
             pulseVector[item] = 1.0
@@ -203,7 +198,7 @@ class CompressSensing : NSObject, NSCoding {
             pulseVector[item] = 0.0
             dctVec.append(contentsOf: dctVector)
         }
-        dctMat = dctVec.toMatrix(rows: numberOfSamples, columns: totalNumberOfSamples)
+        dctMat = dctVec.toMatrix(rows: blockSamples, columns: blockLength!)
         
         /* print debugging
          print(dctVec.description)
@@ -227,9 +222,9 @@ class CompressSensing : NSObject, NSCoding {
     private func lassoReg (dctMat : [Array<Float>]){
         os_log("Lasso regression function", log: OSLog.default, type: .debug)
         // Set Initial Weights
-        let initial_weights_lat = Matrix<Float>(rows: totalNumberOfSamples+1, columns: 1, repeatedValue: 0)
-        let initial_weights_lon = Matrix<Float>(rows: totalNumberOfSamples+1, columns: 1, repeatedValue: 0)
-        weights_lat = try! lassModel.train(dctMat, output: latValArray, initialWeights: initial_weights_lat, l1Penalty: l1_penalty, tolerance: tolerance, iteration : iteration!)
+        let initial_weights_lat = Matrix<Float>(rows: blockLength!+1, columns: 1, repeatedValue: 0)
+        let initial_weights_lon = Matrix<Float>(rows: blockLength!+1, columns: 1, repeatedValue: 0)
+        weights_lat = try! lassModel.train(dctMat, output: latValArray, initialWeights: initial_weights_lat, l1Penalty: l1_penalty!, tolerance: tolerance, iteration : iteration!)
         
         /* print debugging
          print(dctMat.description)
@@ -238,7 +233,7 @@ class CompressSensing : NSObject, NSCoding {
          print(weights_lat.column(1).description)
          */
         
-        weights_lon = try! lassModel.train(dctMat, output: lonValArray, initialWeights: initial_weights_lon, l1Penalty: l1_penalty, tolerance: tolerance, iteration : iteration!)
+        weights_lon = try! lassModel.train(dctMat, output: lonValArray, initialWeights: initial_weights_lon, l1Penalty: l1_penalty!, tolerance: tolerance, iteration : iteration!)
     }
     
     /* Performs IDCT of weights */
@@ -246,8 +241,8 @@ class CompressSensing : NSObject, NSCoding {
         os_log("IDCT of weights", log: OSLog.default, type: .debug)
         var lat_cor = inverseDCT(weights_lat.column(1))
         var lon_cor = inverseDCT(weights_lon.column(1))
-        lat_cor = Array(lat_cor*(1/Float(sqrt(ratio*0.5*Double(totalNumberOfSamples)))))
-        lon_cor = Array(lon_cor*(1/Float(sqrt(ratio*0.5*Double(totalNumberOfSamples)))))
+        lat_cor = Array(lat_cor*(1/Float(sqrt(ratio!*0.5*Double(blockLength!)))))
+        lon_cor = Array(lon_cor*(1/Float(sqrt(ratio!*0.5*Double(blockLength!)))))
         
         var vec_lat = Array<Float>()
         var vec_lon = Array<Float>()
@@ -263,30 +258,64 @@ class CompressSensing : NSObject, NSCoding {
         lat_est = Array((lat_cor+delta_lat)*stdLat+meanLat)
         lon_est = Array((lon_cor+delta_lon)*stdLon+meanLon)
     }
-
+    
     /* MSE */
-    func MSE() -> Float {
+    private func MSE() -> Float {
         let MSE = rmsq((lat_est-latArray_org)+(lon_est-lonArray_org))
         print("Total latlon MSE \(MSE)")
         return MSE
     }
-    //MARK: Complete computation
-    func compute() -> [CLLocationCoordinate2D] {
+    //MARK: Complete computation for 1 block length
+    private func computeBlock() -> ([CLLocationCoordinate2D], Float) {
         let downSampledIndices = randomSampling()
         let dctMat = eyeDCT(downSampledIndices: downSampledIndices)
         lassoReg(dctMat: dctMat)
         IDCT_weights(downSampledIndices: downSampledIndices)
-        let _ = MSE()
+        let MSEblock = MSE()
         var est_coord = [CLLocationCoordinate2D]()
         for item in 0..<lat_est.count{
             est_coord.append(CLLocationCoordinate2DMake(Double(lat_est[item]), Double(lon_est[item])))
         }
-        return est_coord
+        return (est_coord, MSEblock)
+    }
+    
+    // Entire computation for all input vector
+    func compute() -> ([CLLocationCoordinate2D],Float) {
+        let totalLength = locationVector!.count
+        let numberOfBlocks = Int(floor(Double(totalLength / blockLength!)))
+        var est_coord = [CLLocationCoordinate2D]()
+        var AvgMSE : Float = 0
+        
+        for i in 0..<numberOfBlocks
+        {
+            latArray_org.removeAll()
+            lonArray_org.removeAll()
+            lat_est.removeAll()
+            lon_est.removeAll()
+            latValArray.removeAll()
+            lonValArray.removeAll()
+            
+            for item in locationVector![i*(blockLength!)...((i+1)*blockLength!)-1] {
+                latArray_org.append(Float(item.coordinate.latitude))
+                lonArray_org.append(Float(item.coordinate.longitude))
+            }
+            let (est_coord_block, MSEblock) = computeBlock()
+            AvgMSE = AvgMSE + MSEblock
+            for item in est_coord_block
+            {
+                est_coord.append(item)
+            }
+        }
+        return (est_coord, AvgMSE)
     }
     //MARK: Function to set parameters
-    func setParam(maxIter:Int){
+    func setParam(maxIter:Int, pathLength:Int, samplingRatio:Double, learningRate:Float){
         os_log("Setting algorithm parameters", log: OSLog.default, type: .debug)
-        self.iteration = maxIter
+        iteration = maxIter
+        blockLength = pathLength
+        ratio = samplingRatio
+        l1_penalty = learningRate
+        blockSamples = Int(floor(Double(blockLength!)*ratio!)) // to sample in a block
     }
     
 }
